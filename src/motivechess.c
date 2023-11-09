@@ -12,5 +12,8 @@ int main()
     board_populateBoard( &board );
     board_printBoard( &board );
 
-    board_getMoves( &board );
+    Move moves[ 256 ];
+    moves[ 0 ] = 0; // index 0 will be the count of elements in the list
+
+    board_getMoves( &board, (Move**) &moves );
 }

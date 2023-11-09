@@ -32,21 +32,30 @@ typedef enum
     black_king,
 } Piece;
 
-Piece whitePieces[];
+#define piece_color_mask 0b1000
+#define white_piece_color 0b0000
+#define black_piece_color 0b1000
 
+// TODO review whether these are useful
+Piece whitePieces[];
 Piece blackPieces[];
 
 typedef struct
 {
-    unsigned char squares[ 128 ]; // 8x8 x2
+    Piece squares[ 128 ]; // 8x8 x2
     bool whiteToPlay;
 
+    // TODO also needs clocks, castling, ep
 } Board;
+
+// This needs to carry more than the from/to (which have to be 2x 4-bits each). It also gets the promotion piece and maybe other stuff
+typedef unsigned int Move;
 
 // TODO extend this to take a FEN string
 void board_populateBoard( Board* board );
 
 // TODO pass in a collection object
-void board_getMoves( Board* board );
+void board_getMoves( Board* board, Move** moves );
 
 void board_printBoard( Board* board );
+

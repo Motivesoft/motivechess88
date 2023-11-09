@@ -3,7 +3,7 @@
 #define square(file,rank) (rank << 4) + file
 #define offboard(file,rank) square(file,rank) & 0x88
 
-unsigned char pieceChar( unsigned char piece );
+unsigned char pieceChar( Piece piece );
 
 Piece whitePieces[] =
 {
@@ -84,9 +84,76 @@ void board_populateBoard( Board* board )
     board->whiteToPlay = true;
 }
 
-void board_getMoves( Board* board )
+void board_getMoves( Board* board, Move** moves )
 {
+    if ( board->whiteToPlay )
+    {
+        for ( unsigned short rank = 0; rank < 8; rank++ )
+        {
+            for ( unsigned short file = 0; file < 8; file++ )
+            {
+                Piece piece = board->squares[ square( file, rank ) ];
 
+                switch ( piece )
+                {
+                    case white_pawn:
+                        break;
+
+                    case white_knight:
+                        break;
+
+                    case white_bishop:
+                        break;
+
+                    case white_rook:
+                        break;
+
+                    case white_queen:
+                        break;
+
+                    case white_king:
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    else // if ( !board->whiteToPlay )
+    {
+        for ( unsigned short rank = 0; rank < 8; rank++ )
+        {
+            for ( unsigned short file = 0; file < 8; file++ )
+            {
+                Piece piece = board->squares[ square( file, rank ) ];
+
+                switch ( piece )
+                {
+                    case black_pawn:
+                        break;
+
+                    case black_knight:
+                        break;
+
+                    case black_bishop:
+                        break;
+
+                    case black_rook:
+                        break;
+
+                    case black_queen:
+                        break;
+
+                    case black_king:
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+    }
 }
 
 void board_printBoard( Board* board )
@@ -110,7 +177,7 @@ void board_printBoard( Board* board )
     }
 }
 
-unsigned char pieceChar( unsigned char piece )
+unsigned char pieceChar( Piece piece )
 {
     switch ( piece )
     {
