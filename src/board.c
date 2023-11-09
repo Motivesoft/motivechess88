@@ -9,6 +9,15 @@
     ( *moves )[ 0 ]++; \
     ( *moves )[ ( *moves )[ 0 ] ] = ( startIndex << 8 ) | endIndex; \
 }
+#define addpromotion(moves,startIndex,endIndex) \
+{ \
+    ( *moves )[ ( *moves )[ 0 ] + 1 ] = (knight << 16) | ( startIndex << 8 ) | endIndex; \
+    ( *moves )[ ( *moves )[ 0 ] + 2 ] = (bishop << 16) | ( startIndex << 8 ) | endIndex; \
+    ( *moves )[ ( *moves )[ 0 ] + 3 ] = (rook << 16)   | ( startIndex << 8 ) | endIndex; \
+    ( *moves )[ ( *moves )[ 0 ] + 4 ] = (queen << 16)  | ( startIndex << 8 ) | endIndex; \
+    ( *moves )[ 0 ] += 4; \
+}
+
 
 #define ONE_RANK 16
 #define TWO_RANKS 32
@@ -228,29 +237,51 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                 switch ( piece & 0b0111 ) // colorless
                 {
                     case pawn:
-                        // One step
-                        if ( empty( board, index + oneRank ) )
+                        // Promotion - including promotion with capture
+                        if ( rank == ( 7 - pawnHomeRank ) )
                         {
-                            addmove( moves, index, index + oneRank );
-
-                            // Two step
-                            if ( rank == pawnHomeRank && empty( board, index + twoRanks ) )
+                            // One step
+                            if ( empty( board, index + oneRank ) )
                             {
-                                addmove( moves, index, index + twoRanks );
+                                addpromotion( moves, index, index + oneRank );
+                            }
+
+                            // Capture
+                            if ( ( *enemyPiece )( board, index + oneRank - 1 ) )
+                            {
+                                addpromotion( moves, index, index + oneRank - 1 );
+                            }
+
+                            if ( ( *enemyPiece )( board, index + oneRank + 1 ) )
+                            {
+                                addpromotion( moves, index, index + oneRank + 1 );
                             }
                         }
-
-                        // Capture
-                        if ( ( *enemyPiece )( board, index + oneRank - 1 ) || ( board->epIndex == index - 1 ) )
+                        else // Normal pawn move
                         {
-                            addmove( moves, index, index + oneRank - 1 );
-                        }
+                            // One step
+                            if ( empty( board, index + oneRank ) )
+                            {
+                                addmove( moves, index, index + oneRank );
 
-                        if ( ( *enemyPiece )( board, index + oneRank + 1 ) || ( board->epIndex == index + 1 ) )
-                        {
-                            addmove( moves, index, index + oneRank + 1 );
-                        }
+                                // Two step
+                                if ( rank == pawnHomeRank && empty( board, index + twoRanks ) )
+                                {
+                                    addmove( moves, index, index + twoRanks );
+                                }
+                            }
 
+                            // Capture
+                            if ( ( *enemyPiece )( board, index + oneRank - 1 ) || ( board->epIndex == index - 1 ) )
+                            {
+                                addmove( moves, index, index + oneRank - 1 );
+                            }
+
+                            if ( ( *enemyPiece )( board, index + oneRank + 1 ) || ( board->epIndex == index + 1 ) )
+                            {
+                                addmove( moves, index, index + oneRank + 1 );
+                            }
+                        }
                         break;
 
                     case knight:
@@ -297,6 +328,7 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                         }
 
                         // Castling
+                        // TODO need to check for passing through check
                         if ( board->whiteToPlay )
                         {
                             if ( board->castling & Kside )
