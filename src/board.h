@@ -16,20 +16,30 @@ typedef enum // Set the values of some of these where the values are not consecu
 
 typedef enum
 {
+    pawn = 1,
+    knight,
+    bishop,
+    rook,
+    queen,
+    king
+} ColorlessPiece;
+
+typedef enum
+{
     no_piece = 0x00,
-    white_pawn,
-    white_knight,
-    white_bishop,
-    white_rook,
-    white_queen,
-    white_king,
+    white_pawn = no_piece + pawn,
+    white_knight = no_piece + knight,
+    white_bishop = no_piece + bishop,
+    white_rook = no_piece + rook,
+    white_queen = no_piece + queen,
+    white_king = no_piece + king,
     unused_piece = 0x08, // To make sure that black and white pieces are exactly 0x08 apart
-    black_pawn,
-    black_knight,
-    black_bishop,
-    black_rook,
-    black_queen,
-    black_king,
+    black_pawn = unused_piece + pawn,
+    black_knight = unused_piece + knight,
+    black_bishop = unused_piece + bishop,
+    black_rook = unused_piece + rook,
+    black_queen = unused_piece + queen,
+    black_king = unused_piece + king,
 } Piece;
 
 #define piece_color_mask 0b1000

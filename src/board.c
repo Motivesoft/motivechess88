@@ -132,34 +132,47 @@ void board_populateBoard( Board* board )
     board->whiteToPlay = true;
 }
 
+typedef bool ( *PieceTest )( Board* board, unsigned short index );
+
 void board_getSlidingMoves( Board* board, Move( *moves )[ 256 ], unsigned short index, unsigned short offsetCount, unsigned short offsets[] )
 {
+    PieceTest friendPiece;
+    PieceTest enemyPiece;
+
     if ( board->whiteToPlay )
     {
-        for ( unsigned short loop = 0; loop < offsetCount; loop++ )
+        friendPiece = &whitepiece;
+        enemyPiece = &blackpiece;
+    }
+    else
+    {
+        friendPiece = &blackpiece;
+        enemyPiece = &whitepiece;
+    }
+
+    for ( unsigned short loop = 0; loop < offsetCount; loop++ )
+    {
+        unsigned short destination = index;
+        for ( unsigned short iteration = 0; iteration < 7; iteration++ )
         {
-            unsigned short destination = index;
-            for ( unsigned short iteration = 0; iteration < 7; iteration++ )
+            destination += offsets[ loop ];
+            if ( offboard( destination ) )
             {
-                destination += offsets[ loop ];
-                if ( offboard( destination ) )
-                {
-                    break;
-                }
+                break;
+            }
 
-                // Blocker?
-                if ( whitepiece( board, destination ) )
-                {
-                    break;
-                }
+            // Blocker?
+            if ( (*friendPiece)( board, destination ) )
+            {
+                break;
+            }
 
-                addmove( moves, index, destination );
+            addmove( moves, index, destination );
 
-                // Capture?
-                if ( blackpiece( board, destination ) )
-                {
-                    break;
-                }
+            // Capture?
+            if ( (*enemyPiece)( board, destination ) )
+            {
+                break;
             }
         }
     }
@@ -172,44 +185,73 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
     static unsigned short rookOffsets[] = { -ONE_RANK, -1, 1, ONE_RANK };
     static unsigned short kingOffsets[] = { -ONE_RANK - 1, -ONE_RANK, -ONE_RANK + 1, -1, 1, ONE_RANK - 1, ONE_RANK, ONE_RANK + 1 };
 
+    PieceTest friendPiece;
+    PieceTest enemyPiece;
+
+    unsigned short oneRank;
+    unsigned short twoRanks;
+    unsigned short pawnHomeRank;
+
     if ( board->whiteToPlay )
     {
-        for ( unsigned short rank = 0; rank < 8; rank++ )
+        friendPiece = &whitepiece;
+        enemyPiece = &blackpiece;
+
+        oneRank = ONE_RANK;
+        twoRanks = TWO_RANKS;
+
+        pawnHomeRank = 1;
+    }
+    else
+    {
+        friendPiece = &blackpiece;
+        enemyPiece = &whitepiece;
+
+        oneRank = -ONE_RANK;
+        twoRanks = -TWO_RANKS;
+
+        pawnHomeRank = 6;
+    }
+
+    for ( unsigned short rank = 0; rank < 8; rank++ )
+    {
+        for ( unsigned short file = 0; file < 8; file++ )
         {
-            for ( unsigned short file = 0; file < 8; file++ )
+            unsigned short index = indexof( file, rank );
+
+            if ( friendPiece( board, index ) )
             {
-                unsigned short index = indexof( file, rank );
                 Piece piece = board->squares[ index ];
 
-                switch ( piece )
+                switch ( piece & 0b0111 ) // colorless
                 {
-                    case white_pawn:
+                    case pawn:
                         // One step
-                        if ( empty( board, index + ONE_RANK ) )
+                        if ( empty( board, index + oneRank ) )
                         {
-                            addmove( moves, index, index + ONE_RANK );
+                            addmove( moves, index, index + oneRank );
 
                             // Two step
-                            if ( rank == 1 && empty( board, index + TWO_RANKS ) )
+                            if ( rank == pawnHomeRank && empty( board, index + twoRanks ) )
                             {
-                                addmove( moves, index, index + TWO_RANKS );
+                                addmove( moves, index, index + twoRanks );
                             }
                         }
 
                         // Capture
-                        if ( blackpiece( board, index + ONE_RANK - 1 ) || ( board->epIndex == index - 1 ) )
+                        if ( ( *enemyPiece )( board, index + oneRank - 1 ) || ( board->epIndex == index - 1 ) )
                         {
-                            addmove( moves, index, index + ONE_RANK - 1 );
+                            addmove( moves, index, index + oneRank - 1 );
                         }
 
-                        if ( blackpiece( board, index + ONE_RANK + 1 ) || ( board->epIndex == index + 1 ) )
+                        if ( ( *enemyPiece )( board, index + oneRank + 1 ) || ( board->epIndex == index + 1 ) )
                         {
-                            addmove( moves, index, index + ONE_RANK + 1 );
+                            addmove( moves, index, index + oneRank + 1 );
                         }
 
                         break;
 
-                    case white_knight:
+                    case knight:
                         for ( unsigned short loop = 0; loop < 8; loop++ )
                         {
                             unsigned short destination = index + knightOffsets[ loop ];
@@ -218,26 +260,26 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                                 continue;
                             }
 
-                            if ( !whitepiece( board, destination ) )
+                            if ( !( *friendPiece )( board, destination ) )
                             {
                                 addmove( moves, index, destination );
                             }
                         }
                         break;
 
-                    case white_bishop:
+                    case bishop:
                         board_getSlidingMoves( board, moves, index, 4, bishopOffsets );
                         break;
 
-                    case white_rook:
+                    case rook:
                         board_getSlidingMoves( board, moves, index, 4, rookOffsets );
                         break;
 
-                    case white_queen:
+                    case queen:
                         board_getSlidingMoves( board, moves, index, 8, kingOffsets );
                         break;
 
-                    case white_king:
+                    case king:
                         for ( unsigned short loop = 0; loop < 8; loop++ )
                         {
                             unsigned short destination = index + kingOffsets[ loop ];
@@ -246,45 +288,11 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                                 continue;
                             }
 
-                            if ( !whitepiece( board, destination ) )
+                            if ( !( *friendPiece )( board, destination ) )
                             {
                                 addmove( moves, index, destination );
                             }
                         }
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-    else // if ( !board->whiteToPlay )
-    {
-        for ( unsigned short rank = 0; rank < 8; rank++ )
-        {
-            for ( unsigned short file = 0; file < 8; file++ )
-            {
-                Piece piece = board->squares[ indexof( file, rank ) ];
-
-                switch ( piece )
-                {
-                    case black_pawn:
-                        break;
-
-                    case black_knight:
-                        break;
-
-                    case black_bishop:
-                        break;
-
-                    case black_rook:
-                        break;
-
-                    case black_queen:
-                        break;
-
-                    case black_king:
                         break;
 
                     default:
