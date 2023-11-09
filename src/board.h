@@ -16,14 +16,14 @@ typedef enum // Set the values of some of these where the values are not consecu
 
 typedef enum
 {
-    empty = 0x00,
+    no_piece = 0x00,
     white_pawn,
     white_knight,
     white_bishop,
     white_rook,
     white_queen,
     white_king,
-    unused = 0x08, // To make sure that black and white pieces are exactly 0x08 apart
+    unused_piece = 0x08, // To make sure that black and white pieces are exactly 0x08 apart
     black_pawn,
     black_knight,
     black_bishop,
@@ -44,8 +44,8 @@ typedef struct
 {
     Piece squares[ 128 ]; // 8x8 x2
     bool whiteToPlay;
-
-    // TODO also needs clocks, castling, ep
+    unsigned short epIndex;
+    // TODO also needs clocks, castling
 } Board;
 
 // This needs to carry more than the from/to (which have to be 2x 4-bits each). It also gets the promotion piece and maybe other stuff
@@ -55,7 +55,7 @@ typedef unsigned int Move;
 void board_populateBoard( Board* board );
 
 // TODO pass in a collection object
-void board_getMoves( Board* board, Move** moves );
+void board_getMoves( Board* board, Move (*moves)[256]);
 
 void board_printBoard( Board* board );
 

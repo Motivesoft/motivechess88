@@ -15,5 +15,5 @@ int main()
     Move moves[ 256 ];
     moves[ 0 ] = 0; // index 0 will be the count of elements in the list
 
-    board_getMoves( &board, (Move**) &moves );
+    board_getMoves( &board, &moves );
 }

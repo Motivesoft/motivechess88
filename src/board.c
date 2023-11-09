@@ -1,9 +1,53 @@
 #include "board.h"
 
-#define square(file,rank) (rank << 4) + file
-#define offboard(file,rank) square(file,rank) & 0x88
+//#define square(file,rank) (rank << 4) + file
+//#define empty(board,file,rank) onboard(file,rank) && (board->squares[square(file,rank)] == 0)
+//#define offboard(file,rank) square(file,rank) & 0x88
+//#define onboard(file,rank) !offboard(file,rank)
+#define addmove(moves,startIndex,endIndex) \
+{ \
+    ( *moves )[ 0 ]++; \
+    ( *moves )[ ( *moves )[ 0 ] ] = ( startIndex << 8 ) | endIndex; \
+}
+
+#define ONE_RANK 16
+#define TWO_RANKS 32
 
 unsigned char pieceChar( Piece piece );
+unsigned short indexof( unsigned short file, unsigned short rank )
+{
+    return ( rank << 4 ) + file;
+}
+bool offboard( unsigned short index )
+{
+    return index & 0x88;
+}
+bool onboard( unsigned short index )
+{
+    return !offboard( index );
+}
+Piece pieceat( Board* board, unsigned short index )
+{
+    return board->squares[ index ];
+}
+bool empty( Board* board, unsigned short index )
+{
+    return board->squares[ index ] == no_piece;
+}
+bool unused( Board* board, unsigned short index )
+{
+    return board->squares[ index ] == unused_piece;
+}
+bool whitepiece( Board* board, unsigned short index )
+{
+    Piece piece = pieceat( board, index );
+    return ( piece >= white_pawn && piece <= white_king );
+}
+bool blackpiece( Board* board, unsigned short index )
+{
+    Piece piece = pieceat( board, index );
+    return ( piece >= white_pawn && piece <= white_king );
+}
 
 Piece whitePieces[] =
 {
@@ -69,7 +113,7 @@ void board_populateBoard( Board* board )
     {
         for ( unsigned short file = 0; file < 8; file++ )
         {
-            board->squares[ square( file, rank ) ] = empty;
+            board->squares[ indexof( file, rank ) ] = no_piece;
         }
     }
 
@@ -77,14 +121,14 @@ void board_populateBoard( Board* board )
     {
         for ( unsigned short file = 8; file < 16; file++ )
         {
-            board->squares[ square( file, rank ) ] = unused;
+            board->squares[ indexof( file, rank ) ] = unused_piece;
         }
     }
 
     board->whiteToPlay = true;
 }
 
-void board_getMoves( Board* board, Move** moves )
+void board_getMoves( Board* board, Move( *moves )[ 256 ] )
 {
     if ( board->whiteToPlay )
     {
@@ -92,11 +136,35 @@ void board_getMoves( Board* board, Move** moves )
         {
             for ( unsigned short file = 0; file < 8; file++ )
             {
-                Piece piece = board->squares[ square( file, rank ) ];
+                unsigned short index = indexof( file, rank );
+                Piece piece = board->squares[ index ];
 
                 switch ( piece )
                 {
                     case white_pawn:
+                        // One step
+                        if ( empty( board, index + ONE_RANK ) )
+                        {
+                            addmove( moves, index, index + ONE_RANK );
+
+                            // Two step
+                            if ( rank == 1 && empty( board, index + TWO_RANKS ) )
+                            {
+                                addmove( moves, index, index + TWO_RANKS );
+                            }
+                        }
+
+                        // Capture
+                        if ( blackpiece( board, index + ONE_RANK - 1 ) || ( board->epIndex == index - 1 ) )
+                        {
+                            addmove( moves, index, index + ONE_RANK - 1 );
+                        }
+
+                        if ( blackpiece( board, index + ONE_RANK + 1 ) || ( board->epIndex == index + 1 ) )
+                        {
+                            addmove( moves, index, index + ONE_RANK + 1 );
+                        }
+
                         break;
 
                     case white_knight:
@@ -126,7 +194,7 @@ void board_getMoves( Board* board, Move** moves )
         {
             for ( unsigned short file = 0; file < 8; file++ )
             {
-                Piece piece = board->squares[ square( file, rank ) ];
+                Piece piece = board->squares[ indexof( file, rank ) ];
 
                 switch ( piece )
                 {
@@ -154,6 +222,8 @@ void board_getMoves( Board* board, Move** moves )
             }
         }
     }
+
+    printf( "%d moves found", ( *moves )[ 0 ] );
 }
 
 void board_printBoard( Board* board )
@@ -164,13 +234,14 @@ void board_printBoard( Board* board )
 
         for ( unsigned short file = 0; file < 16; file++ )
         {
-            if ( offboard( file, rank ) )
+            unsigned short index = indexof( file, rank );
+            if ( offboard( index ) )
             {
                 printf( " - " );
             }
             else
             {
-                printf( " %c ", pieceChar( board->squares[ square( file, rank ) ] ) );
+                printf( " %c ", pieceChar( board->squares[ index ] ) );
             }
         }
         printf( "\n" );
@@ -181,7 +252,7 @@ unsigned char pieceChar( Piece piece )
 {
     switch ( piece )
     {
-        case empty:
+        case no_piece:
             return ' ';
 
         case white_pawn:
@@ -202,7 +273,7 @@ unsigned char pieceChar( Piece piece )
         case white_king:
             return 'K';
 
-        case unused:
+        case unused_piece:
             return '-';
 
         case black_pawn:
