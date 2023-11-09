@@ -34,10 +34,6 @@ bool empty( Board* board, unsigned short index )
 {
     return board->squares[ index ] == no_piece;
 }
-bool unused( Board* board, unsigned short index )
-{
-    return board->squares[ index ] == unused_piece;
-}
 bool whitepiece( Board* board, unsigned short index )
 {
     Piece piece = pieceat( board, index );
@@ -46,7 +42,7 @@ bool whitepiece( Board* board, unsigned short index )
 bool blackpiece( Board* board, unsigned short index )
 {
     Piece piece = pieceat( board, index );
-    return ( piece >= white_pawn && piece <= white_king );
+    return ( piece >= black_pawn && piece <= black_king );
 }
 
 Piece whitePieces[] =
@@ -168,6 +164,20 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                         break;
 
                     case white_knight:
+                        unsigned short offsets[] = { -TWO_RANKS - 1, -TWO_RANKS + 1, -ONE_RANK - 2, -ONE_RANK + 2, ONE_RANK - 2, ONE_RANK + 2, TWO_RANKS - 1, TWO_RANKS + 1 };
+                        for ( unsigned short loop = 0; loop < 8; loop++ )
+                        {
+                            unsigned short destination = index + offsets[ loop ];
+                            if ( offboard( destination ) )
+                            {
+                                continue;
+                            }
+
+                            if ( !whitepiece( board, destination ) )
+                            {
+                                addmove( moves, index, destination );
+                            }
+                        }
                         break;
 
                     case white_bishop:
