@@ -130,6 +130,8 @@ void board_populateBoard( Board* board )
     }
 
     board->whiteToPlay = true;
+    board->epIndex = 0;
+    board->castling = Kside | Qside | kside | qside;
 }
 
 typedef bool ( *PieceTest )( Board* board, unsigned short index );
@@ -291,6 +293,42 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                             if ( !( *friendPiece )( board, destination ) )
                             {
                                 addmove( moves, index, destination );
+                            }
+                        }
+
+                        // Castling
+                        if ( board->whiteToPlay )
+                        {
+                            if ( board->castling & Kside )
+                            {
+                                if ( empty( board, F1 ) && empty( board, G1 ) )
+                                {
+                                    addmove( moves, index, G1 );
+                                }
+                            }
+                            if ( board->castling & Qside )
+                            {
+                                if ( empty( board, B1 ) && empty( board, C1 ) && empty( board, D1 ) )
+                                {
+                                    addmove( moves, index, C1 );
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if ( board->castling & kside )
+                            {
+                                if ( empty( board, F8 ) && empty( board, G8 ) )
+                                {
+                                    addmove( moves, index, G8 );
+                                }
+                            }
+                            if ( board->castling & qside )
+                            {
+                                if ( empty( board, B8 ) && empty( board, C8 ) && empty( board, D8 ) )
+                                {
+                                    addmove( moves, index, C8 );
+                                }
                             }
                         }
                         break;

@@ -46,6 +46,14 @@ typedef enum
 #define white_piece_color 0b0000
 #define black_piece_color 0b1000
 
+typedef enum
+{
+    Kside = 0b1000, 
+    Qside = 0b0100, 
+    kside = 0b0010, 
+    qside = 0b0001
+} Castling;
+
 // TODO review whether these are useful
 Piece whitePieces[];
 Piece blackPieces[];
@@ -54,6 +62,7 @@ typedef struct
 {
     Piece squares[ 128 ]; // 8x8 x2
     bool whiteToPlay;
+    unsigned char castling; // bitmask
     unsigned short epIndex;
     // TODO also needs clocks, castling
 } Board;
