@@ -132,9 +132,44 @@ void board_populateBoard( Board* board )
     board->whiteToPlay = true;
 }
 
+void board_getSlidingMoves( Board* board, Move( *moves )[ 256 ], unsigned short index, unsigned short offsetCount, unsigned short offsets[] )
+{
+    if ( board->whiteToPlay )
+    {
+        for ( unsigned short loop = 0; loop < offsetCount; loop++ )
+        {
+            unsigned short destination = index;
+            for ( unsigned short iteration = 0; iteration < 7; iteration++ )
+            {
+                destination += offsets[ loop ];
+                if ( offboard( destination ) )
+                {
+                    break;
+                }
+
+                // Blocker?
+                if ( whitepiece( board, destination ) )
+                {
+                    break;
+                }
+
+                addmove( moves, index, destination );
+
+                // Capture?
+                if ( blackpiece( board, destination ) )
+                {
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void board_getMoves( Board* board, Move( *moves )[ 256 ] )
 {
     static unsigned short knightOffsets[] = { -TWO_RANKS - 1, -TWO_RANKS + 1, -ONE_RANK - 2, -ONE_RANK + 2, ONE_RANK - 2, ONE_RANK + 2, TWO_RANKS - 1, TWO_RANKS + 1 };
+    static unsigned short bishopOffsets[] = { -ONE_RANK - 1, -ONE_RANK + 1, ONE_RANK - 1, ONE_RANK + 1 };
+    static unsigned short rookOffsets[] = { -ONE_RANK, -1, 1, ONE_RANK };
     static unsigned short kingOffsets[] = { -ONE_RANK - 1, -ONE_RANK, -ONE_RANK + 1, -1, 1, ONE_RANK - 1, ONE_RANK, ONE_RANK + 1 };
 
     if ( board->whiteToPlay )
@@ -191,12 +226,15 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                         break;
 
                     case white_bishop:
+                        board_getSlidingMoves( board, moves, index, 4, bishopOffsets );
                         break;
 
                     case white_rook:
+                        board_getSlidingMoves( board, moves, index, 4, rookOffsets );
                         break;
 
                     case white_queen:
+                        board_getSlidingMoves( board, moves, index, 8, kingOffsets );
                         break;
 
                     case white_king:
