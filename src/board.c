@@ -18,6 +18,14 @@ unsigned short indexof( unsigned short file, unsigned short rank )
 {
     return ( rank << 4 ) + file;
 }
+unsigned short fileof( unsigned short index )
+{
+    return index & 0b1111;
+}
+unsigned short rankof( unsigned short index )
+{
+    return ( index >> 4 ) & 0b1111;
+}
 bool offboard( unsigned short index )
 {
     return index & 0x88;
@@ -126,6 +134,9 @@ void board_populateBoard( Board* board )
 
 void board_getMoves( Board* board, Move( *moves )[ 256 ] )
 {
+    static unsigned short knightOffsets[] = { -TWO_RANKS - 1, -TWO_RANKS + 1, -ONE_RANK - 2, -ONE_RANK + 2, ONE_RANK - 2, ONE_RANK + 2, TWO_RANKS - 1, TWO_RANKS + 1 };
+    static unsigned short kingOffsets[] = { -ONE_RANK - 1, -ONE_RANK, -ONE_RANK + 1, -1, 1, ONE_RANK - 1, ONE_RANK, ONE_RANK + 1 };
+
     if ( board->whiteToPlay )
     {
         for ( unsigned short rank = 0; rank < 8; rank++ )
@@ -164,10 +175,9 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                         break;
 
                     case white_knight:
-                        unsigned short offsets[] = { -TWO_RANKS - 1, -TWO_RANKS + 1, -ONE_RANK - 2, -ONE_RANK + 2, ONE_RANK - 2, ONE_RANK + 2, TWO_RANKS - 1, TWO_RANKS + 1 };
                         for ( unsigned short loop = 0; loop < 8; loop++ )
                         {
-                            unsigned short destination = index + offsets[ loop ];
+                            unsigned short destination = index + knightOffsets[ loop ];
                             if ( offboard( destination ) )
                             {
                                 continue;
@@ -190,6 +200,19 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
                         break;
 
                     case white_king:
+                        for ( unsigned short loop = 0; loop < 8; loop++ )
+                        {
+                            unsigned short destination = index + kingOffsets[ loop ];
+                            if ( offboard( destination ) )
+                            {
+                                continue;
+                            }
+
+                            if ( !whitepiece( board, destination ) )
+                            {
+                                addmove( moves, index, destination );
+                            }
+                        }
                         break;
 
                     default:
@@ -233,7 +256,14 @@ void board_getMoves( Board* board, Move( *moves )[ 256 ] )
         }
     }
 
-    printf( "%d moves found", ( *moves )[ 0 ] );
+    printf( "%d moves found\n", ( *moves )[ 0 ] );
+    for ( unsigned short loop = 0; loop < ( *moves )[ 0 ]; loop++ )
+    {
+        Move move = ( *moves )[ loop + 1 ];
+        unsigned char from = ( move >> 8 ) & 0xff;
+        unsigned char to = move & 0xff;
+        printf( "%c%c%c%c\n", 'a' + fileof( from ), '1' + rankof( from ), 'a' + fileof( to ), '1' + rankof( to ) );
+    }
 }
 
 void board_printBoard( Board* board )
